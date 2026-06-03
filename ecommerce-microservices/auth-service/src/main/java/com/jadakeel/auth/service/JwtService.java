@@ -2,17 +2,13 @@ package com.jadakeel.auth.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jadakeel.auth.model.UserAccount;
+import com.jadakeel.common.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import java.security.MessageDigest;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Map;
-import java.util.UUID;
 
 @Service
 public class JwtService {
@@ -43,24 +39,7 @@ public class JwtService {
     }
 
     public boolean isValid(String token) {
-        try {
-            String[] parts = token.split("\\.");
-            if (parts.length != 3) {
-                return false;
-            }
-            String body = parts[0] + "." + parts[1];
-            if (!MessageDigest.isEqual(sign(body).getBytes(StandardCharsets.UTF_8),
-                    parts[2].getBytes(StandardCharsets.UTF_8))) {
-                return false;
-            }
-            Map<?, ?> payload = objectMapper.readValue(Base64.getUrlDecoder().decode(parts[1]), Map.class);
-            Number exp = (Number) payload.get("exp");
-            return exp != null && Instant.now().getEpochSecond() < exp.longValue()
-                    && payload.get("sub") != null
-                    && UUID.fromString(payload.get("sub").toString()) != null;
-        } catch (Exception ex) {
-            return false;
-        }
+        return JwtUtil.isValid(token, secret);
     }
 
     private String encodeJson(Map<String, ?> value) throws Exception {
@@ -69,9 +48,9 @@ public class JwtService {
     }
 
     private String sign(String body) throws Exception {
-        Mac mac = Mac.getInstance("HmacSHA256");
-        mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+        javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA256");
+        mac.init(new javax.crypto.spec.SecretKeySpec(secret.getBytes(java.nio.charset.StandardCharsets.UTF_8), "HmacSHA256"));
         return Base64.getUrlEncoder().withoutPadding()
-                .encodeToString(mac.doFinal(body.getBytes(StandardCharsets.UTF_8)));
+                .encodeToString(mac.doFinal(body.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
     }
 }

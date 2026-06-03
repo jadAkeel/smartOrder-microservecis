@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "shipments")
+@Table(name = "shipments", uniqueConstraints = @UniqueConstraint(name = "uk_shipments_order_id", columnNames = "order_id"))
 @Data
 @Builder
 @NoArgsConstructor
@@ -20,6 +20,7 @@ public class Shipment {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @Column(name = "order_id", nullable = false)
     private UUID orderId;
     private UUID customerId;
     private UUID correlationId;

@@ -5,21 +5,21 @@ spring:
   application:
     name: auth-service
   datasource:
-    url: jdbc:postgresql://postgres:5432/auth_db
-    username: postgres
-    password: postgres
+    url: ${AUTH_DB_URL:jdbc:postgresql://postgres:5432/auth_db}
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: ${JPA_DDL_AUTO:update}
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
 auth:
   jwt:
-    secret: ${JWT_SECRET:change-me-to-a-long-production-secret}
-    ttl-seconds: 86400
+    secret: ${JWT_SECRET:dev-only-jwt-secret-replace-before-production}
+    ttl-seconds: ${JWT_TTL_SECONDS:86400}
 
 eureka:
   client:

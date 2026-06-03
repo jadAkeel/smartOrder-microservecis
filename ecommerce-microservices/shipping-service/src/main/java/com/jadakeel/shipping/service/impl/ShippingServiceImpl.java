@@ -31,14 +31,22 @@ public class ShippingServiceImpl implements ShippingService {
     public void processShipping(PaymentProcessedEvent paymentEvent) {
         log.info("Processing shipping for order: {}", paymentEvent.getOrderId());
 
-        // In a real application, we would retrieve shipping address from order service
-        // For this example, we'll create a shipment with minimal information
+        var existingShipment = shipmentRepository.findByOrderId(paymentEvent.getOrderId());
+        if (existingShipment.isPresent()) {
+            log.info("Shipment already exists for order: {}, tracking: {}",
+                    paymentEvent.getOrderId(), existingShipment.get().getTrackingNumber());
+            publishShipmentProcessed(paymentEvent, existingShipment.get());
+            return;
+        }
+
+        UUID customerId = paymentEvent.getCustomerId() != null
+                ? paymentEvent.getCustomerId()
+                : UUID.randomUUID();
 
         try {
-            // Create the shipment record
             Shipment shipment = Shipment.builder()
                     .orderId(paymentEvent.getOrderId())
-                    .customerId(UUID.randomUUID()) // In a real app this would come from order
+                    .customerId(customerId)
                     .correlationId(paymentEvent.getCorrelationId())
                     .status(Shipment.ShipmentStatus.DRIVER_ASSIGNED)
                     .carrierName(getRandomCarrier())
@@ -46,7 +54,6 @@ public class ShippingServiceImpl implements ShippingService {
                     .shippedDate(LocalDateTime.now())
                     .estimatedDeliveryDate(LocalDateTime.now().plusDays(3))
                     .currentLocation("Assigned")
-                    // Minimal shipping details for demo
                     .shippingAddress("123 Main St, New York, NY 10001")
                     .recipientName("John Doe")
                     .recipientPhone("(212) 555-1234")
@@ -54,29 +61,20 @@ public class ShippingServiceImpl implements ShippingService {
 
             Shipment savedShipment = shipmentRepository.save(shipment);
 
-            // Update delivery status after assignment
             savedShipment.setStatus(Shipment.ShipmentStatus.OUT_FOR_DELIVERY);
             shipmentRepository.save(savedShipment);
 
-            // Send shipment processed event
-            ShipmentProcessedEvent shipmentEvent = new ShipmentProcessedEvent(
-                    paymentEvent.getCorrelationId(),
-                    paymentEvent.getOrderId(),
-                    savedShipment.getId(),
-                    savedShipment.getTrackingNumber()
-            );
-
-            kafkaTemplate.send("shipping-events", shipmentEvent);
+            publishShipmentProcessed(paymentEvent, savedShipment);
             log.info("Order shipped successfully. Order ID: {}, Tracking: {}",
                     paymentEvent.getOrderId(), savedShipment.getTrackingNumber());
 
         } catch (Exception e) {
             log.error("Failed to process shipping for order: {}", paymentEvent.getOrderId(), e);
 
-            // Send shipment failure event
             ShipmentFailedEvent failedEvent = new ShipmentFailedEvent(
                     paymentEvent.getCorrelationId(),
                     paymentEvent.getOrderId(),
+                    customerId,
                     "Failed to process shipment: " + e.getMessage()
             );
 
@@ -147,4 +145,17 @@ public class ShippingServiceImpl implements ShippingService {
 
         return sb.toString();
     }
+
+    private void publishShipmentProcessed(PaymentProcessedEvent paymentEvent, Shipment shipment) {
+        ShipmentProcessedEvent shipmentEvent = new ShipmentProcessedEvent(
+                paymentEvent.getCorrelationId(),
+                paymentEvent.getOrderId(),
+                shipment.getCustomerId(),
+                shipment.getId(),
+                shipment.getTrackingNumber()
+        );
+
+        kafkaTemplate.send("shipping-events", shipmentEvent);
+    }
+
 }

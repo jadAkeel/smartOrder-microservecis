@@ -10,4 +10,5 @@ public interface PaymentService {
     void processPayment(InventoryReservedEvent event);
     Payment pay(PaymentRequest request);
     Payment getPaymentByOrderId(UUID orderId);
+    Payment refund(UUID orderId);
 }

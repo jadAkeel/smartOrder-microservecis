@@ -51,6 +51,10 @@ eureka:
   instance:
     prefer-ip-address: true
 
+auth:
+  jwt:
+    secret: ${JWT_SECRET:dev-only-jwt-secret-replace-before-production}
+
 logging:
   level:
-    org.springframework.cloud.gateway: DEBUG
+    org.springframework.cloud.gateway: ${GATEWAY_LOG_LEVEL:INFO}

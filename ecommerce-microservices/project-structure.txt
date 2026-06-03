@@ -1,11 +1,15 @@
 ecommerce-microservices/
 ├── pom.xml                          # Parent POM
-├── common-library/                  # Shared code between services
+├── common-library/                  # Shared code between services (events, DTOs)
 ├── service-registry/                # Eureka Service Discovery
 ├── api-gateway/                     # Spring Cloud Gateway
-├── order-service/                   # Order management
-├── inventory-service/               # Inventory management
+├── auth-service/                    # Authentication & JWT
+├── product-service/                 # Product CRUD
+├── order-service/                   # Order management & Saga
+├── inventory-service/               # Inventory management (MongoDB)
 ├── payment-service/                 # Payment processing
-├── notification-service/            # Notification handling
-├── shipping-service/                # Shipping management
-└── docker-compose.yml               # Docker composition for all services
+├── notification-service/            # Notification handling (MongoDB)
+├── shipping-service/                # Shipping/Delivery management
+├── scripts/                         # Database init scripts
+├── docker-compose.yml               # Docker composition for all services
+└── README.md                        # Project documentation

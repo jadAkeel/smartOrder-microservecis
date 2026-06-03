@@ -42,7 +42,7 @@ public class InventoryController {
 
     @GetMapping("/products/{productId}")
     public ResponseEntity<InventoryItemResponse> getInventoryByProductId(@PathVariable UUID productId) {
-        InventoryItem item = inventoryItemService.getInventoryItemById(productId);
+        InventoryItem item = inventoryItemService.getInventoryItemByProductId(productId);
         return ResponseEntity.ok(mapToResponse(item));
     }
 
@@ -86,7 +86,7 @@ public class InventoryController {
                 orderId,
                 request.getCustomerId(),
                 request.getItems().stream()
-                        .map(item -> new OrderItemDto(item.getProductId(), item.getQuantity(), item.getPrice()))
+                        .map(item -> new OrderItemDto(item.getProductId(), null, item.getQuantity(), item.getPrice()))
                         .collect(Collectors.toList()),
                 request.getTotalAmount()
         );

@@ -9,6 +9,7 @@ import com.jadakeel.payment.repository.PaymentRepository;
 import com.jadakeel.payment.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Optional;
-import java.util.Random;
 import java.util.UUID;
 
 @Service
@@ -27,15 +27,14 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
+    @Value("${payment.simulation.success:true}")
+    private boolean defaultSimulatedPaymentSuccess = true;
+
     @Override
     @Transactional
     public void processPayment(InventoryReservedEvent event) {
         log.info("Processing payment for order: {}", event.getOrderId());
 
-        // In a real application, we would call a payment gateway
-        // Here we'll simulate payment processing with random success/failure
-
-        // First, get the order details (in a real app this would come from a service call or the event)
         UUID orderId = event.getOrderId();
         UUID customerId = event.getCustomerId() == null ? UUID.randomUUID() : event.getCustomerId();
         BigDecimal amount = event.getTotalAmount() == null ? BigDecimal.ZERO : event.getTotalAmount();
@@ -89,7 +88,7 @@ public class PaymentServiceImpl implements PaymentService {
         payment.setStatus(Payment.PaymentStatus.PENDING);
 
         // Simulate payment processing
-        boolean paymentSuccessful = simulateSuccess == null ? simulatePaymentGateway() : simulateSuccess;
+        boolean paymentSuccessful = simulateSuccess == null ? defaultSimulatedPaymentSuccess : simulateSuccess;
 
         if (paymentSuccessful) {
             payment.setStatus(Payment.PaymentStatus.SUCCESS);
@@ -97,11 +96,12 @@ public class PaymentServiceImpl implements PaymentService {
             payment.setTransactionId(generateTransactionId());
             paymentRepository.save(payment);
 
-            // Send payment success event
+            // Send payment success event with customerId
             PaymentProcessedEvent processedEvent = new PaymentProcessedEvent(
                     correlationId,
                     orderId,
-                    payment.getId()
+                    payment.getId(),
+                    customerId
             );
 
             kafkaTemplate.send("payment-events", processedEvent);
@@ -111,10 +111,11 @@ public class PaymentServiceImpl implements PaymentService {
             payment.setStatus(Payment.PaymentStatus.FAILED);
             paymentRepository.save(payment);
 
-            // Send payment failure event
+            // Send payment failure event with customerId
             PaymentFailedEvent failedEvent = new PaymentFailedEvent(
                     correlationId,
                     orderId,
+                    customerId,
                     "Payment processing failed"
             );
 
@@ -126,14 +127,37 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
+    @Transactional
+    public Payment refund(UUID orderId) {
+        Payment payment = paymentRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new RuntimeException("Payment not found for order: " + orderId));
+
+        if (payment.getStatus() != Payment.PaymentStatus.SUCCESS) {
+            log.warn("Cannot refund payment for order {}: status is {}", orderId, payment.getStatus());
+            throw new IllegalStateException("Only successful payments can be refunded");
+        }
+
+        payment.setStatus(Payment.PaymentStatus.REFUNDED);
+        payment.setTransactionId("REFUND-" + generateTransactionId());
+        paymentRepository.save(payment);
+
+        // Send refund event with customerId
+        PaymentFailedEvent refundEvent = new PaymentFailedEvent(
+                UUID.randomUUID(),
+                orderId,
+                payment.getCustomerId(),
+                "Payment refunded due to shipping failure"
+        );
+        kafkaTemplate.send("payment-events", refundEvent);
+
+        log.info("Payment refunded for order: {}", orderId);
+        return payment;
+    }
+
+    @Override
     public Payment getPaymentByOrderId(UUID orderId) {
         return paymentRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new RuntimeException("Payment not found for order: " + orderId));
-    }
-
-    private boolean simulatePaymentGateway() {
-        // Simulate 90% success rate
-        return new Random().nextInt(10) < 9;
     }
 
     private String generateTransactionId() {

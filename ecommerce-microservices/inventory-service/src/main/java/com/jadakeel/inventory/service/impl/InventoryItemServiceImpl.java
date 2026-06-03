@@ -22,15 +22,19 @@ public class InventoryItemServiceImpl implements InventoryItemService {
     @Override
     @Transactional
     public InventoryItem createInventoryItem(InventoryItemRequest request) {
+        if (inventoryRepository.existsByProductId(request.getProductId())) {
+            throw new IllegalArgumentException("Inventory item already exists for product: " + request.getProductId());
+        }
         InventoryItem item = InventoryItem.builder()
                 .id(UUID.randomUUID())
+                .productId(request.getProductId())
                 .name(request.getName())
                 .description(request.getDescription())
                 .availableQuantity(request.getQuantity())
                 .reservedQuantity(0)
                 .build();
 
-        log.info("Creating new inventory item: {}", item.getName());
+        log.info("Creating new inventory item: {} for product: {}", item.getName(), request.getProductId());
         return inventoryRepository.save(item);
     }
 
@@ -67,8 +71,14 @@ public class InventoryItemServiceImpl implements InventoryItemService {
     }
 
     @Override
+    public InventoryItem getInventoryItemByProductId(UUID productId) {
+        return inventoryRepository.findByProductId(productId)
+                .orElseThrow(() -> new RuntimeException("Inventory item not found for product: " + productId));
+    }
+
+    @Override
     public boolean checkAvailability(UUID productId, Integer quantity) {
-        InventoryItem item = inventoryRepository.findById(productId)
+        InventoryItem item = inventoryRepository.findByProductId(productId)
                 .orElse(null);
 
         if (item == null) {

@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: service-registry
+  cloud:
+    service-registry:
+      auto-registration:
+        enabled: false
   output:
     ansi:
       enabled: always

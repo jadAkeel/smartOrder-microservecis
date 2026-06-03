@@ -5,8 +5,10 @@ import com.jadakeel.order.dto.OrderResponse;
 import com.jadakeel.order.model.Order;
 import com.jadakeel.order.service.OrderService;
 import jakarta.validation.Valid;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,7 +23,11 @@ public class OrderController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public OrderResponse createOrder(@Valid @RequestBody OrderRequest orderRequest) {
+    public OrderResponse createOrder(@Valid @RequestBody OrderRequest orderRequest, HttpServletRequest request) {
+        Object authenticatedUserId = request.getAttribute("authenticatedUserId");
+        if (authenticatedUserId != null && !orderRequest.getCustomerId().toString().equals(authenticatedUserId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Order customerId must match authenticated user");
+        }
         return orderService.createOrder(orderRequest);
     }
 
