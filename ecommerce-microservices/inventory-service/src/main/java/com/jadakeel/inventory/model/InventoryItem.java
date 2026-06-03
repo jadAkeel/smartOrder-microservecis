@@ -4,6 +4,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import lombok.AllArgsConstructor;
@@ -22,6 +23,9 @@ import java.util.UUID;
 public class InventoryItem {
     @Id
     private UUID id;
+
+    @Indexed(unique = true)
+    private UUID productId;
     private String name;
     private String description;
     private Integer availableQuantity;

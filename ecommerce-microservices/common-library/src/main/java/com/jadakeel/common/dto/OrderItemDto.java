@@ -12,6 +12,7 @@ import java.util.UUID;
 @NoArgsConstructor
 public class OrderItemDto {
     private UUID productId;
+    private String productName;
     private Integer quantity;
     private BigDecimal price;
 }

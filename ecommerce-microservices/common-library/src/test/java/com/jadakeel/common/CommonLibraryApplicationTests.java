@@ -1,12 +1,15 @@
 package com.jadakeel.common;
 
+import com.jadakeel.common.event.order.OrderCreatedEvent;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class CommonLibraryApplicationTests {
 
 	@Test
-	void applicationClassIsPresent() {
-		org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> Class.forName("com.jadakeel.common.CommonApplication"));
+	void eventClassIsPresent() {
+		assertNotNull(OrderCreatedEvent.class);
 	}
 
 }

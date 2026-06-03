@@ -61,6 +61,7 @@ public class OrderServiceImpl implements OrderService {
         List<OrderItemDto> itemDtos = savedOrder.getItems().stream()
                 .map(item -> new OrderItemDto(
                         item.getProductId(),
+                        item.getProductName(),
                         item.getQuantity(),
                         item.getPrice()))
                 .collect(Collectors.toList());

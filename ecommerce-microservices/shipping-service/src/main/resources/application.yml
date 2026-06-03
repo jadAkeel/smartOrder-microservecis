@@ -5,17 +5,17 @@ spring:
   application:
     name: shipping-service
   datasource:
-    url: jdbc:postgresql://postgres:5432/shipping_db
-    username: postgres
-    password: postgres
+    url: ${SHIPPING_DB_URL:jdbc:postgresql://postgres:5432/shipping_db}
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: ${JPA_DDL_AUTO:update}
+    show-sql: ${JPA_SHOW_SQL:false}
     properties:
       hibernate:
-        format_sql: true
+        format_sql: ${HIBERNATE_FORMAT_SQL:false}
         dialect: org.hibernate.dialect.PostgreSQLDialect
   kafka:
     bootstrap-servers: kafka:9092

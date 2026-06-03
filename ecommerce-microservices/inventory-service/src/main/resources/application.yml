@@ -7,6 +7,7 @@ spring:
   data:
     mongodb:
       uri: mongodb://mongodb:27017/inventory
+      auto-index-creation: true
   kafka:
     bootstrap-servers: kafka:9092
     consumer:

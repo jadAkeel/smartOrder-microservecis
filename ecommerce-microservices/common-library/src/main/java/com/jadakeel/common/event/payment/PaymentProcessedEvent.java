@@ -15,10 +15,18 @@ import java.util.UUID;
 public class PaymentProcessedEvent extends BaseEvent {
     private UUID orderId;
     private UUID paymentId;
+    private UUID customerId;
 
     public PaymentProcessedEvent(UUID correlationId, UUID orderId, UUID paymentId) {
         super(correlationId);
         this.orderId = orderId;
         this.paymentId = paymentId;
+    }
+
+    public PaymentProcessedEvent(UUID correlationId, UUID orderId, UUID paymentId, UUID customerId) {
+        super(correlationId);
+        this.orderId = orderId;
+        this.paymentId = paymentId;
+        this.customerId = customerId;
     }
 }

@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Locale;
 import java.util.Map;
 
 @RestController
@@ -23,14 +24,15 @@ public class AuthController {
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
     public AuthResponse register(@Valid @RequestBody RegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
+        String normalizedEmail = normalizeEmail(request.getEmail());
+        if (userRepository.existsByEmail(normalizedEmail)) {
             throw new IllegalArgumentException("Email is already registered");
         }
         UserAccount user = UserAccount.builder()
-                .fullName(request.getFullName())
-                .email(request.getEmail())
+                .fullName(request.getFullName().trim())
+                .email(normalizedEmail)
                 .phone(request.getPhone())
-                .role(request.getRole() == null ? UserAccount.Role.CUSTOMER : request.getRole())
+                .role(UserAccount.Role.CUSTOMER)
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .build();
         UserAccount saved = userRepository.save(user);
@@ -39,7 +41,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public AuthResponse login(@Valid @RequestBody LoginRequest request) {
-        UserAccount user = userRepository.findByEmail(request.getEmail())
+        UserAccount user = userRepository.findByEmail(normalizeEmail(request.getEmail()))
                 .orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new IllegalArgumentException("Invalid email or password");
@@ -59,5 +61,9 @@ public class AuthController {
                 .role(user.getRole())
                 .token(token)
                 .build();
+    }
+
+    private String normalizeEmail(String email) {
+        return email.trim().toLowerCase(Locale.ROOT);
     }
 }

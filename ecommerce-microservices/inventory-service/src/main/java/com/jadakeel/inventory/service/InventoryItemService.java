@@ -12,5 +12,6 @@ public interface InventoryItemService {
     List<InventoryItem> getAllInventoryItems();
     InventoryItem updateInventoryItem(UUID id, InventoryItemRequest request);
     void deleteInventoryItem(UUID id);
+    InventoryItem getInventoryItemByProductId(UUID productId);
     boolean checkAvailability(UUID productId, Integer quantity);
 }

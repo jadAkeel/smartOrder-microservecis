@@ -26,4 +26,9 @@ public class PaymentController {
     public ResponseEntity<Payment> getPaymentByOrderId(@PathVariable UUID orderId) {
         return ResponseEntity.ok(paymentService.getPaymentByOrderId(orderId));
     }
+
+    @PostMapping("/refund/{orderId}")
+    public ResponseEntity<Payment> refund(@PathVariable UUID orderId) {
+        return ResponseEntity.ok(paymentService.refund(orderId));
+    }
 }
